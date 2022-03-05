@@ -1,9 +1,32 @@
 import type { GetStaticProps, NextPage } from 'next';
 import Head from 'next/head';
-import Image from 'next/image';
 import styles from '../styles/Home.module.css';
 import { TimelineCard } from '../components/organisms/TimelineCard';
-import { useQuery, gql, ApolloClient, InMemoryCache } from '@apollo/client';
+import { gql, ApolloClient, InMemoryCache } from '@apollo/client';
+
+export interface Note {
+    id: number;
+    createdAt: Date | null;
+    title: string;
+    tag: string;
+    specificTag: string;
+    author: string;
+    source: string;
+    action: string;
+}
+
+interface GraphQLNotes {
+    attributes: {
+        author: { data: { attributes: { title: string } } };
+        createdAt: Date | null;
+        source: { data: { attributes: { title: string } } };
+        specific_tag: { data: { attributes: { title: string } } };
+        tag: { data: { attributes: { title: string } } };
+        title: string;
+        action: { data: { attributes: { action: string } } };
+    };
+    id: number;
+}
 
 const NOTES = gql`
     query getNotes {
@@ -13,10 +36,38 @@ const NOTES = gql`
                 attributes {
                     title
                     createdAt
-                    tags {
+                    tag {
                         data {
                             attributes {
                                 title
+                            }
+                        }
+                    }
+                    specific_tag {
+                        data {
+                            attributes {
+                                title
+                            }
+                        }
+                    }
+                    author {
+                        data {
+                            attributes {
+                                title
+                            }
+                        }
+                    }
+                    source {
+                        data {
+                            attributes {
+                                title
+                            }
+                        }
+                    }
+                    action {
+                        data {
+                            attributes {
+                                action
                             }
                         }
                     }
@@ -31,6 +82,33 @@ const Home: NextPage<{ data: any; loading: any }> = ({ data, loading }) => {
         data = data.notes.data;
     }
 
+    console.log('#debug inside raw data', data);
+
+    const filteredData: Note[] = data.map((item: GraphQLNotes) => {
+        const container: Note = {
+            id: 0,
+            createdAt: null,
+            title: '',
+            tag: '',
+            specificTag: '',
+            author: '',
+            source: '',
+            action: '',
+        };
+
+        container.author = item.attributes.author.data.attributes.title;
+        container.createdAt = item.attributes.createdAt;
+        container.id = item.id;
+        container.source = item.attributes.source.data.attributes.title;
+        container.specificTag =
+            item.attributes.specific_tag.data.attributes.title;
+        container.tag = item.attributes.tag.data.attributes.title;
+        container.title = item.attributes.title;
+        container.action = item.attributes.action.data.attributes.action;
+
+        return container;
+    });
+
     return (
         <div className={styles.container}>
             <Head>
@@ -42,16 +120,7 @@ const Home: NextPage<{ data: any; loading: any }> = ({ data, loading }) => {
                 <link rel='icon' href='/favicon.ico' />
             </Head>
             <main className={styles.main}>
-                {data.map((note: any) => (
-                    <TimelineCard
-                        timelineTitle='Bootstrapped Information'
-                        cardTitle={note.attributes.title}
-                        mainTopic={'hei'}
-                        specificTopic='database'
-                        author='fireship'
-                        location='youtube'
-                    />
-                ))}
+                <TimelineCard data={filteredData}></TimelineCard>
             </main>
         </div>
     );
@@ -63,9 +132,8 @@ export const getStaticProps: GetStaticProps = async () => {
         cache: new InMemoryCache(),
     });
 
-    const { loading, error, data } = await client.query({ query: NOTES });
+    const { loading, data } = await client.query({ query: NOTES });
 
-    console.log('#debug data async', data);
     return {
         props: {
             data,
