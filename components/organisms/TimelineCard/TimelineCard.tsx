@@ -36,7 +36,7 @@ const TimelineCard: React.VoidFunctionComponent<{ data: Note[] }> = ({
     return (
         <Timeline active={1} bulletSize={24} lineWidth={2}>
             {data.map((note: Note) => (
-                <Timeline.Item title={note.action} key={note.id}>
+                <Timeline.Item key={note.id}>
                     <Card
                         padding='md'
                         withBorder
