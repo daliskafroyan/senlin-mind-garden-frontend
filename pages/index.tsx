@@ -3,7 +3,30 @@ import Head from 'next/head';
 import styles from '../styles/Home.module.css';
 import { TimelineCard } from '../components/organisms/TimelineCard';
 import { gql, ApolloClient, InMemoryCache } from '@apollo/client';
-import { GraphQLNotes, Note } from './notes/Notes.types';
+
+export interface Note {
+    id: number;
+    createdAt: Date | null;
+    title: string;
+    tag: string;
+    specificTag: string;
+    author: string;
+    source: string;
+    action: string;
+}
+
+export interface GraphQLNotes {
+    attributes: {
+        author: { data: { attributes: { title: string } } };
+        createdAt: Date | null;
+        source: { data: { attributes: { title: string } } };
+        specific_tag: { data: { attributes: { title: string } } };
+        tag: { data: { attributes: { title: string } } };
+        title: string;
+        action: { data: { attributes: { action: string } } };
+    };
+    id: number;
+}
 
 const NOTES = gql`
     query getNotes {
@@ -58,8 +81,6 @@ const Home: NextPage<{ data: any; loading: any }> = ({ data, loading }) => {
     if (!loading) {
         data = data.notes.data;
     }
-
-    console.log('#debug inside raw data', data);
 
     const filteredData: Note[] = data.map((item: GraphQLNotes) => {
         const container: Note = {
